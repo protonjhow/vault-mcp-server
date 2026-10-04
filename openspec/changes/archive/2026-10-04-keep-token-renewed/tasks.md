@@ -24,4 +24,4 @@ container needs no bind mount).
 ## 3. Hand over
 
 - [x] 3.1 Stage `pkg/client/renew.go`, `pkg/client/renew_test.go`, `pkg/client/client.go` and `openspec/`, check staging, hand over the commit heredoc and `git push -u origin jinx-token-renew`
-- [ ] 3.2 Report the pushed commit SHA for jinx-stack's re-pin (a separate jinx-stack change)
+- [x] 3.2 Report the pushed commit SHA for jinx-stack's re-pin (a separate jinx-stack change)
