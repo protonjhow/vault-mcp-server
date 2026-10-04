@@ -46,7 +46,7 @@ func TestNewVaultClient(t *testing.T) {
 	vaultToken := "test-token"
 	vaultNamespace := "test-namespace"
 
-	client, err := NewVaultClient(sessionID, vaultAddress, false, vaultToken, vaultNamespace)
+	client, err := NewVaultClient(sessionID, vaultAddress, false, vaultToken, vaultNamespace, log.New())
 	if err != nil {
 		t.Logf("NewVaultClient() error = %v (expected in test environment)", err)
 	}

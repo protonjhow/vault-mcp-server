@@ -19,6 +19,8 @@ import (
 
 var (
 	activeClients sync.Map
+	// stopRenewals holds each session's token renewal stop function
+	stopRenewals sync.Map
 )
 
 const (
@@ -44,7 +46,7 @@ func getEnv(key, fallback string) string {
 }
 
 // NewVaultClient creates a new Vault client for the given session
-func NewVaultClient(sessionId string, vaultAddress string, vaultSkipTLSVerify bool, vaultToken string, vaultNamespace string) (*api.Client, error) {
+func NewVaultClient(sessionId string, vaultAddress string, vaultSkipTLSVerify bool, vaultToken string, vaultNamespace string, logger *log.Logger) (*api.Client, error) {
 	// Initialize Vault client
 	config := api.DefaultConfig()
 	config.Address = vaultAddress
@@ -60,6 +62,9 @@ func NewVaultClient(sessionId string, vaultAddress string, vaultSkipTLSVerify bo
 	}
 
 	client.SetToken(vaultToken)
+	if old, ok := stopRenewals.Swap(sessionId, startRenewal(client, logger)); ok {
+		old.(func())()
+	}
 
 	if vaultNamespace != "" {
 		client.SetNamespace(vaultNamespace)
@@ -81,6 +86,9 @@ func GetVaultClient(sessionId string) *api.Client {
 // DeleteVaultClient removes the Vault client for the given session
 func DeleteVaultClient(sessionId string) {
 	activeClients.Delete(sessionId)
+	if stop, ok := stopRenewals.LoadAndDelete(sessionId); ok {
+		stop.(func())()
+	}
 }
 
 // GetVaultClientFromContext extracts Vault client from the MCP context
@@ -135,7 +143,7 @@ func CreateVaultClientForSession(ctx context.Context, session server.ClientSessi
 		}
 	}
 
-	newClient, err := NewVaultClient(session.SessionID(), vaultAddress, vaultSkipTLSVerify, vaultToken, vaultNamespace)
+	newClient, err := NewVaultClient(session.SessionID(), vaultAddress, vaultSkipTLSVerify, vaultToken, vaultNamespace, logger)
 	if err != nil {
 		return nil, fmt.Errorf("NewVaultClient failed to create Vault client: %v", err)
 	}
