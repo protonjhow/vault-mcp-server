@@ -92,9 +92,9 @@ func writeSecretHandler(ctx context.Context, req mcp.CallToolRequest, logger *lo
 		return mcp.NewToolResultError(fmt.Sprintf("Failed to get Vault client: %v", err)), nil
 	}
 
-	mounts, err := vault.Sys().ListMounts()
+	m, err := lookupMount(vault, mount)
 	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("failed to list mounts: %v", err)), nil
+		return mcp.NewToolResultError(fmt.Sprintf("failed to look up mount: %v", err)), nil
 	}
 
 	// Default to a v1 KV path
@@ -103,7 +103,7 @@ func writeSecretHandler(ctx context.Context, req mcp.CallToolRequest, logger *lo
 	isV2 := false
 
 	// Check if the mount exists
-	if m, ok := mounts[mount+"/"]; ok {
+	if m != nil {
 		// is it a KV v2 mount?
 		if m.Options["version"] == "2" {
 			isV2 = true

@@ -1,0 +1,14 @@
+# jinx-stack build of this fork, for gridctl's classic (non-BuildKit) builder:
+# no RUN --mount, no --platform. Upstream's Dockerfile needs BuildKit.
+FROM golang:1.24.6-alpine@sha256:c8c5f95d64aa79b6547f3b626eb84b16a7ce18a139e3e9ca19a8c078b85ba80d AS build
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /vault-mcp-server ./cmd/vault-mcp-server
+
+FROM scratch
+COPY --from=build /vault-mcp-server /bin/vault-mcp-server
+COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+USER 65532:65532
+CMD ["/bin/vault-mcp-server", "stdio"]
